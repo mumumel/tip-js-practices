@@ -347,13 +347,39 @@ check("35. Работа с другим набором, без зависимо�
   assert.deepEqual(tasks, before);
 });
 
-// Три собственных проверки можно добавить здесь, до итогового вывода,
-// либо выполнить отдельно и описать в отчёте. Общие проверки удалять не нужно.
-// Пример формы записи (не готовая проверка задания):
-// check("Собственный случай: ...", () => {
-//   const result = ...;
-//   assert.deepEqual(result, ...);
-// });
+check("Собственный случай 1: добавление после удаления", () => {
+  const tasks = fixture();
+  const afterRemove = expectTasks(removeTask(tasks, 7));
+  const afterAdd = expectTasks(addTask(afterRemove, 20, "Новая после удаления", "high"));
+  assert.deepEqual(afterAdd.map((t) => t.id), [1, 4, 10, 20]);
+  assert.deepEqual(getTaskStats(afterAdd),
+    { total: 4, completed: 2, pending: 2, progress: 50 });
+  assert.deepEqual(tasks, fixture());
+});
+
+check("Собственный случай 2: изменение первой и последней записи", () => {
+  const tasks = fixture();
+  let next = expectTasks(setTaskCompleted(tasks, 1, false));
+  assert.equal(next[0].completed, false);
+  next = expectTasks(renameTask(next, 10, "Последняя переименована"));
+  assert.equal(next[3].title, "Последняя переименована");
+  assert.equal(next.length, 4);
+  assert.deepEqual(next.map((t) => t.id), [1, 4, 7, 10]);
+  assert.deepEqual(tasks, fixture());
+});
+
+check("Собственный случай 3: последовательное обновление нескольких задач", () => {
+  const tasks = fixture();
+  let current = tasks;
+  current = expectTasks(setTaskCompleted(current, 4, true));
+  current = expectTasks(setTaskCompleted(current, 7, true));
+  assert.deepEqual(getTaskStats(current),
+    { total: 4, completed: 4, pending: 0, progress: 100 });
+  current = expectTasks(setTaskCompleted(current, 4, false));
+  assert.deepEqual(getTaskStats(current),
+    { total: 4, completed: 3, pending: 1, progress: 75 });
+  assert.deepEqual(tasks, fixture());
+});
 
 console.log(`\nПроверок пройдено: ${passed}; не пройдено: ${failed}.`);
 if (failed > 0) {
